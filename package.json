@@ -1,0 +1,8 @@
+{
+  "name": "lan-arena-chat",
+  "version": "2.0.0",
+  "description": "Gaming-themed LAN chat. Players must connect (request + accept) before they can chat.",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "dependencies": { "express": "^4.19.2", "socket.io": "^4.7.5" }
+}
