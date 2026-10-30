@@ -1,17 +1,23 @@
 const express = require('express');
 const http = require('http');
 const os = require('os');
+const path = require('path');
 const { Server } = require('socket.io');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 const PORT = process.env.PORT || 3000;
-app.use(express.static(__dirname + '/public'));
 
-const users = new Map();      // id -> name
-const connected = new Map();  // id -> Set(ids)
-const outgoing = new Map();   // id -> Set(ids) pending requests sent by id
+// FIX YAHAN HAI
+app.use(express.static(path.join(__dirname, 'public')));
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+const users = new Map();
+const connected = new Map();
+const outgoing = new Map();
 
 const names = () => [...users.values()];
 function relFor(id) {
@@ -52,7 +58,7 @@ io.on('connection', (socket) => {
 
   socket.on('request', (to) => {
     if (!valid(to) || connected.get(id).has(to) || outgoing.get(id).has(to)) return;
-    if (outgoing.get(to).has(id)) {            // they already asked us: connect now
+    if (outgoing.get(to).has(id)) {
       outgoing.get(to).delete(id);
       link(id, to);
     } else {
@@ -84,7 +90,7 @@ io.on('connection', (socket) => {
 
   socket.on('message', ({ to, text }) => {
     text = String(text || '').trim().slice(0, 1000);
-    if (!text || !valid(to) || !connected.get(id).has(to)) return;   // chat only between connected players
+    if (!text || !valid(to) || !connected.get(id).has(to)) return;
     const msg = { from: id, to, text, time: Date.now() };
     io.to(to).emit('message', msg);
     socket.emit('message', msg);
@@ -104,9 +110,5 @@ io.on('connection', (socket) => {
 });
 
 server.listen(PORT, '0.0.0.0', () => {
-  console.log('\nLAN Arena Chat is running. Open on any device on the same network:');
-  console.log(`  This PC:  http://localhost:${PORT}`);
-  for (const list of Object.values(os.networkInterfaces()))
-    for (const i of list)
-      if (i.family === 'IPv4' && !i.internal) console.log(`  Network:  http://${i.address}:${PORT}`);
+  console.log(`Running on ${PORT}`);
 });
